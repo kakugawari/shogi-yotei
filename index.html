@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#21406b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="将棋大会カレンダー">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<title>こども将棋大会カレンダー</title>
+<style>
+  :root{
+    --ai:#21406b; --ai-deep:#152a44;
+    --washi:#f5f1e8; --washi-2:#efe9dc; --card:#fffdf8;
+    --sumi:#23201c; --sumi-soft:#5c574e; --shu:#d0432b; --line:#ddd5c4;
+    --mie:#21406b; --aichi:#c8702f; --tm:#bf9b30; --other:#5b8c5a;
+    --disp:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"MS PMincho",serif;
+    --body:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",system-ui,sans-serif;
+    --sh:0 1px 2px rgba(21,42,68,.08),0 4px 14px rgba(21,42,68,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--body);color:var(--sumi);
+    background:radial-gradient(120% 60% at 50% -10%, #fbf8f1 0%, var(--washi) 60%) fixed;
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+  header{position:sticky;top:0;z-index:30;
+    background:linear-gradient(180deg,var(--ai) 0%,var(--ai-deep) 100%);color:#f3eee2;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px 11px;box-shadow:0 2px 12px rgba(21,42,68,.25)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .koma{width:26px;height:28px;flex:none;background:#f3eee2;border:0;padding:0;
+    clip-path:polygon(50% 0,100% 26%,86% 100%,14% 100%,0 26%);display:grid;place-items:center;
+    cursor:pointer;transition:transform .12s,background .12s}
+  .brand .koma:active{transform:scale(.88);background:#fff}
+  .brand .koma b{font-family:var(--disp);color:var(--ai-deep);font-size:15px;line-height:1;transform:translateY(1px)}
+  .brand h1{font-family:var(--disp);font-size:18px;letter-spacing:.05em;margin:0;font-weight:600}
+  .brand .sub{font-size:11px;opacity:.72;margin-left:auto;letter-spacing:.04em}
+  .note{font-size:11px;opacity:.7;margin-top:5px;letter-spacing:.03em}
+
+  /* 色分けのはんれい（選択できない・表示だけ） */
+  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
+    padding:10px 16px 9px;font-size:11.5px;color:var(--sumi-soft);
+    border-bottom:1px solid var(--line)}
+  .legend span.item{display:inline-flex;align-items:center;gap:5px}
+  .legend .km{width:10px;height:11px;flex:none;clip-path:polygon(50% 0,100% 30%,84% 100%,16% 100%,0 30%)}
+  .km.mie{background:var(--mie)} .km.aichi{background:var(--aichi)}
+  .km.tm{background:var(--tm)} .km.other{background:var(--other)}
+
+  .list{padding:6px 12px 40px}
+  .section-h{font-family:var(--disp);font-size:15px;letter-spacing:.05em;color:var(--ai-deep);
+    margin:20px 4px 8px;padding-bottom:6px;border-bottom:1.5px solid var(--line);
+    display:flex;align-items:baseline;gap:8px}
+  .section-h small{font-size:11px;color:var(--sumi-soft);font-family:var(--body);letter-spacing:.08em}
+  .empty-note{color:var(--sumi-soft);font-size:13px;text-align:center;padding:34px 12px}
+  .empty-note .big{font-size:26px;display:block;margin-bottom:8px;opacity:.5}
+
+  .ev{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--other);
+    border-radius:12px;padding:12px 13px;margin-bottom:10px;box-shadow:var(--sh);position:relative}
+  .ev.mie{border-left-color:var(--mie)} .ev.aichi{border-left-color:var(--aichi)}
+  .ev.tm{border-left-color:var(--tm)} .ev.other{border-left-color:var(--other)}
+  .ev .top{display:flex;align-items:flex-start;gap:10px}
+  .ev .date-badge{flex:none;text-align:center;background:var(--washi-2);border-radius:9px;padding:5px 8px;min-width:52px}
+  .ev .date-badge .m{font-size:10px;color:var(--sumi-soft);font-weight:700;letter-spacing:.05em}
+  .ev .date-badge .dd{font-family:var(--disp);font-size:22px;line-height:1;color:var(--ai-deep)}
+  .ev .date-badge .w{font-size:10px;color:var(--sumi-soft);margin-top:1px}
+  .ev .date-badge.sun .dd{color:var(--shu)}
+  .ev h3{margin:0 0 4px;font-size:15px;letter-spacing:.01em;line-height:1.35;padding-right:26px}
+  .ev .meta{font-size:12px;color:var(--sumi-soft);display:flex;flex-wrap:wrap;gap:4px 12px}
+  .ev .meta span{display:inline-flex;align-items:center;gap:4px}
+  .ev .tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+  .ev .tag{font-size:11px;background:var(--washi-2);color:var(--sumi-soft);padding:2px 8px;border-radius:6px;font-weight:600}
+  .ev .tag.area{color:#fff}
+  .ev .tag.area.mie{background:var(--mie)} .ev .tag.area.aichi{background:var(--aichi)}
+  .ev .tag.area.tm{background:var(--tm)} .ev .tag.area.other{background:var(--other)}
+  .ev .deadline{color:var(--shu);font-weight:700}
+  .ev .actions{margin-top:10px;display:flex;gap:8px}
+  .ev .link{flex:1;text-align:center;text-decoration:none;background:transparent;
+    color:var(--sumi-soft);font-weight:600;font-size:12.5px;padding:8px;border-radius:8px;
+    letter-spacing:.04em;border:1px solid var(--line);transition:.12s}
+  .ev .link:active{background:var(--washi-2);color:var(--ai)}
+  .ev .link.disabled{background:transparent;border-style:dashed;color:#c2baa8;pointer-events:none}
+  .ev .fav-btn{position:absolute;top:10px;right:10px;border:0;background:transparent;font-size:20px;cursor:pointer;
+    line-height:1;color:var(--line);width:30px;height:30px}
+  .ev .fav-btn.on{color:var(--shu)}
+  .ev .src{font-size:10px;color:#a79f8d;margin-top:7px}
+  .ev.past{background:#eceae5;border-color:#d5cfc2;box-shadow:none}
+  .ev.past .date-badge{background:#dedad2}
+  .ev.past .tag{background:#dedad2}
+
+
+  /* 毎年ひらかれる大会（日程未発表）の別枠 */
+  .annual-h{font-family:var(--disp);font-size:15px;letter-spacing:.05em;color:var(--ai-deep);
+    margin:30px 4px 4px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+  .annual-note{font-size:11.5px;color:var(--sumi-soft);margin:0 4px 12px;line-height:1.6}
+  .ev.annual{border-style:dashed;border-left-style:solid;background:#fdfaf3}
+  .ev.annual .when{flex:none;text-align:center;background:transparent;border:1px dashed var(--line);
+    border-radius:9px;padding:6px 7px;min-width:52px;color:var(--sumi-soft)}
+  .ev.annual .when .lab{font-size:9px;letter-spacing:.06em;font-weight:700;opacity:.8}
+  .ev.annual .when .val{font-family:var(--disp);font-size:15px;line-height:1.25;color:var(--ai-deep);margin-top:2px}
+  .ev.annual .tag.soon{background:#f2e7cd;color:#8a6a1f}
+  /* 手動入力モーダル */
+  .ovl{position:fixed;inset:0;background:rgba(21,42,68,.45);z-index:50;display:none;
+    align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+  .ovl.show{display:flex}
+  .sheet{background:var(--washi);width:100%;max-width:560px;border-radius:18px 18px 0 0;
+    max-height:92vh;overflow-y:auto;padding:0 16px calc(env(safe-area-inset-bottom) + 20px);
+    box-shadow:0 -6px 30px rgba(21,42,68,.28);animation:up .22s ease}
+  @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet-h{position:sticky;top:0;background:var(--washi);padding:16px 0 10px;
+    display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);margin-bottom:14px;z-index:2}
+  .sheet-h h2{font-family:var(--disp);font-size:17px;letter-spacing:.05em;margin:0;font-weight:600;color:var(--ai-deep)}
+  .sheet-h .x{margin-left:auto;border:0;background:transparent;font-size:22px;color:var(--sumi-soft);
+    cursor:pointer;line-height:1;width:34px;height:34px}
+  .fld{margin-bottom:13px}
+  .fld label{display:block;font-size:12px;font-weight:700;color:var(--sumi-soft);margin-bottom:5px;letter-spacing:.04em}
+  .fld label .req{color:var(--shu);margin-left:3px}
+  .fld input,.fld select{width:100%;font-family:var(--body);font-size:15px;color:var(--sumi);
+    background:var(--card);border:1px solid var(--line);border-radius:9px;padding:10px 11px;
+    -webkit-appearance:none;appearance:none}
+  .fld select{background-image:linear-gradient(45deg,transparent 50%,var(--sumi-soft) 50%),linear-gradient(135deg,var(--sumi-soft) 50%,transparent 50%);
+    background-position:calc(100% - 17px) 18px,calc(100% - 12px) 18px;background-size:5px 5px;background-repeat:no-repeat}
+  .fld input:focus,.fld select:focus{outline:0;border-color:var(--ai);box-shadow:0 0 0 3px rgba(33,64,107,.1)}
+  .fld .hint{font-size:11px;color:#a79f8d;margin-top:4px}
+  .row2{display:flex;gap:10px}.row2 .fld{flex:1}
+  .err{color:var(--shu);font-size:12px;font-weight:700;margin-bottom:10px;display:none}
+  .err.show{display:block}
+  .sheet-actions{display:flex;gap:10px;margin-top:18px}
+  .btn{flex:1;border:0;font-family:var(--body);font-weight:700;font-size:14px;padding:13px;
+    border-radius:11px;cursor:pointer;letter-spacing:.05em}
+  .btn.primary{background:var(--ai);color:#fff}
+  .btn.ghost{background:transparent;color:var(--sumi-soft);border:1px solid var(--line)}
+  .ev .del{border:0;background:transparent;color:#b5ad9c;font-size:12px;font-weight:700;
+    padding:8px 10px;cursor:pointer;flex:none}
+  .tag.mine{background:#e3ecf5;color:var(--ai)}
+
+  footer{padding:8px 18px 30px;color:var(--sumi-soft);font-size:11px;line-height:1.7}
+  footer b{color:var(--sumi)} footer a{color:var(--ai)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <button class="koma" id="addBtn" aria-label="大会を手で追加"></button>
+      <h1>こども将棋大会カレンダー</h1>
+      <span class="sub" id="todayStr"></span>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span class="item"><span class="km mie"></span>三重</span>
+    <span class="item"><span class="km aichi"></span>愛知</span>
+    <span class="item"><span class="km tm"></span>全国（テーブルマーク）</span>
+  </div>
+
+  <div class="list" id="listView"></div>
+  <footer id="footer"></footer>
+</div>
+
+<div class="ovl" id="ovl">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="大会を追加">
+    <div class="sheet-h">
+      <h2 id="sheetTitle">大会を追加</h2>
+      <button class="x" id="closeBtn" aria-label="とじる">✕</button>
+    </div>
+    <div class="err" id="formErr"></div>
+    <div class="fld">
+      <label for="fName">大会名<span class="req">*</span></label>
+      <input id="fName" type="text" placeholder="第○回 ○○こども将棋大会">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label for="fDate">開催日<span class="req">*</span></label>
+        <input id="fDate" type="date">
+      </div>
+      <div class="fld">
+        <label for="fArea">地域</label>
+        <select id="fArea">
+          <option value="mie">三重</option>
+          <option value="aichi">愛知</option>
+          <option value="tm">全国（テーブルマーク）</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="fld">
+      <label for="fVenue">会場</label>
+      <input id="fVenue" type="text" placeholder="○○公民館（津市）">
+    </div>
+    <div class="fld">
+      <label for="fOrg">主催</label>
+      <input id="fOrg" type="text" placeholder="日本将棋連盟 ○○支部">
+    </div>
+    <div class="fld">
+      <label for="fDeadline">申込締切</label>
+      <input id="fDeadline" type="date">
+      <div class="hint">入れると赤色で表示されます</div>
+    </div>
+    <div class="fld">
+      <label for="fTags">タグ</label>
+      <input id="fTags" type="text" placeholder="こども、事前申込、無料">
+      <div class="hint">「、」か「,」で区切ってください</div>
+    </div>
+    <div class="fld">
+      <label for="fUrl">詳細ページのURL</label>
+      <input id="fUrl" type="url" inputmode="url" placeholder="https://...">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="cancelBtn">やめる</button>
+      <button class="btn primary" id="saveBtn">追加する</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ============================================================
+   データ：1件 = 1大会。ここを足し引きするだけで更新できます。
+   area: mie（三重）/ aichi（愛知）/ tm（テーブルマーク全国）/ other（その他）
+   date "YYYY-MM-DD" / deadline（申込締切）任意 / url があれば詳細ボタン有効
+   出典：三重 https://mie-shogi.com/match
+        愛知 https://shogitokai.sakura.ne.jp/profile.html
+        全国 https://www.jti.co.jp/culture/shogi/kids/schedule/2026/index.html
+   ============================================================ */
+window.SHOGI_EVENTS = [
+  /* ---------- 三重県 ---------- */
+  {id:"mie-cyunansei-07", name:"第1回 中南勢合同教室・月例会", area:"mie", pref:"三重県",
+   date:"2026-07-26", venue:"久居公民館 3F大会議室（津市）",
+   tags:["こども教室","月例会","当日受付"], organizer:"三重県内 子供将棋教室 合同",
+   url:"https://mie-shogi.com/new/cyunansei202607.html", source:"三重県支部連合会"},
+  {id:"mie-daimon", name:"第13回 翔け！大門将棋大会", area:"mie", pref:"三重県",
+   date:"2026-08-29", venue:"街の駅だいもん（津市大門商店街）", deadline:"2026-07-31",
+   tags:["一般（こども可）","事前申込"], organizer:"津市大門大通り商店街振興組合",
+   url:"https://mie-shogi.com/new/daimon2026.html", source:"三重県支部連合会"},
+  {id:"mie-akahata-hokusei", name:"第61回 赤旗全国囲碁・将棋大会 北勢地区大会", area:"mie", pref:"三重県",
+   date:"2026-08-30", venue:"四日市勤労者市民交流センター 3F（四日市市）",
+   tags:["一般（こども可）","当日受付"], organizer:"赤旗全国囲碁・将棋大会実行委員会",
+   url:"https://mie-shogi.com/new/akahatayosen2026.html", source:"三重県支部連合会"},
+  {id:"mie-akahata-chusei", name:"第61回 赤旗全国囲碁・将棋大会 中勢地区大会", area:"mie", pref:"三重県",
+   date:"2026-09-27", venue:"サンワーク津（津市）",
+   tags:["一般（こども可）","当日受付"], organizer:"赤旗全国囲碁・将棋大会実行委員会",
+   url:"https://mie-shogi.com/new/akahatayosen2026.html", source:"三重県支部連合会"},
+  {id:"mie-akahata-nanbu", name:"第61回 赤旗全国囲碁・将棋大会 南部地区大会", area:"mie", pref:"三重県",
+   date:"2026-09-27", venue:"伊勢市労働福祉会館（伊勢市）",
+   tags:["一般（こども可）","当日受付"], organizer:"赤旗全国囲碁・将棋大会実行委員会",
+   url:"https://mie-shogi.com/new/akahatayosen2026.html", source:"三重県支部連合会"},
+  {id:"mie-akahata-ken", name:"第61回 赤旗全国囲碁・将棋大会 三重県大会", area:"mie", pref:"三重県",
+   date:"2026-10-17", venue:"サンワーク津（津市）",
+   tags:["地区予選勝ち抜き者"], organizer:"赤旗全国囲碁・将棋大会実行委員会",
+   url:"https://mie-shogi.com/new/akahatayosen2026.html", source:"三重県支部連合会"},
+  {id:"mie-yokkaichi-oui", name:"第76回四日市市民芸術文化祭 四日市王位戦将棋大会", area:"mie", pref:"三重県",
+   date:"2026-11-15", venue:"四日市市文化会館 第3ホール（四日市市）",
+   tags:["一般（こども可）","当日受付"], organizer:"日本将棋連盟 四日市支部",
+   url:"https://mie-shogi.com/new/yokkaichioui2026.html", source:"三重県支部連合会"},
+
+  /* ---------- 愛知県 ---------- */
+  {id:"ai-aeon-tendo", name:"イオンモール天童杯 全国こども将棋王決定戦 中部エリア大会", area:"aichi", pref:"愛知県",
+   date:"2026-07-26", venue:"イオンモール常滑", deadline:"2026-07-12",
+   tags:["こども"], organizer:"イオンモール", url:"https://online-event.aeonmall.com/kodomo-shougi/", source:"東海本部"},
+  {id:"ai-atsuta-takakura", name:"第3回高座杯 夏休み あつたこども将棋大会", area:"aichi", pref:"愛知県",
+   date:"2026-07-29", venue:"賀城園（名古屋市）",
+   tags:["こども","夏休み"], organizer:"熱田", url:"https://shogitokai.sakura.ne.jp/3takakurahaichirashi_2026_07_29.pdf", source:"東海本部"},
+  {id:"ai-nagoyajo-oui", name:"名古屋城こども王位戦 予選", area:"aichi", pref:"愛知県",
+   date:"2026-08-08", venue:"ウィンクあいち 7F・8F（名古屋市）", deadline:"2026-07-31",
+   tags:["こども","予選"], organizer:"名古屋城こども王位戦実行委員会", url:"https://www.nagoyajo-ouisen.com/", source:"東海本部"},
+  {id:"ai-seto-kodomo", name:"瀬戸こども将棋大会2026", area:"aichi", pref:"愛知県",
+   date:"2026-08-16", venue:"瀬戸市文化センター", deadline:"2026-07-21",
+   tags:["こども"], organizer:"瀬戸", url:"https://shogitokai.sakura.ne.jp/setokodomosyougitaikai_2026_08_16.pdf", source:"東海本部"},
+  {id:"ai-kasugai-challenge", name:"夏休み子ども将棋チャレンジ大会", area:"aichi", pref:"愛知県",
+   date:"2026-08-22", venue:"ナゴヤハウジングセンター春日井会場",
+   tags:["こども","定員64名"], organizer:"愛知県支部連合会",
+   url:"https://aichi-shogi.com/wp-content/uploads/2026/07/a42e95faf12c79b2e81d80461106aa34.pdf", source:"東海本部"},
+  {id:"ai-jcom-tokai", name:"第15回 J:COM杯 3月のライオン 子ども将棋大会 東海大会", area:"aichi", pref:"愛知県",
+   date:"2026-10-12", venue:"あいち健康プラザ（知多郡東浦町）", deadline:"2026-08-31",
+   tags:["全国クラス","交流クラス"], organizer:"J:COM", url:"https://www2.myjcom.jp/special/user/event/kids-shogi/schedule/", source:"東海本部"},
+  {id:"ai-aisangi-meito", name:"愛三岐合同こども将棋大会 めいとう大会", area:"aichi", pref:"愛知県",
+   date:"2026-11-08", venue:"愛知東邦大学 B201/203（名古屋市）",
+   tags:["こども"], organizer:"愛三岐合同", url:"https://sites.google.com/view/meitohshogi/", source:"東海本部"},
+  {id:"ai-kounan-kodomo", name:"第6回 江南子ども将棋大会", area:"aichi", pref:"愛知県",
+   date:"2026-11-08", venue:"江南市地域交流センター",
+   tags:["こども"], organizer:"江南", url:"", source:"東海本部"},
+  {id:"ai-komaki-jinchu", name:"第19回 小牧陣中将棋大会", area:"aichi", pref:"愛知県",
+   date:"2026-12-26", venue:"ふらっとみなみ（小牧市）",
+   tags:["小中学生の部あり","案内チラシは後日"], organizer:"小牧",
+   url:"https://shogitokai.sakura.ne.jp/profile.html", source:"東海本部"},
+
+  /* ---------- 2026年 開催ずみ（結果が出ているもの） ---------- */
+  {id:"mie-menjo-0712", name:"第2回 三重県支部連合会 免状獲得戦（初段戦・二段戦）", area:"mie", pref:"三重県",
+   date:"2026-07-12", venue:"サン・ワーク津（津市）", result:true,
+   tags:["初段戦・二段戦"], organizer:"三重県支部連合会",
+   url:"https://mie-shogi.com/result/menjyokakutoku.html", source:"三重県支部連合会"},
+  {id:"mie-kurashiki-0607", name:"第25回 倉敷王将戦 三重県予選（低学年・高学年の部）／第1回 小学生初級者交流戦", area:"mie", pref:"三重県",
+   date:"2026-06-07", venue:"サン・ワーク津（津市）", result:true,
+   tags:["こども","低学年・高学年の部","初級者交流戦"], organizer:"三重県支部連合会",
+   url:"https://mie-shogi.com/result/kurashiki.html", source:"三重県支部連合会"},
+  {id:"mie-monka-0517", name:"文部科学大臣杯 第22回 小・中学校将棋団体戦 三重県大会", area:"mie", pref:"三重県",
+   date:"2026-05-17", venue:"久居公民館（津市）", result:true,
+   tags:["こども","団体戦","学校対抗"], organizer:"三重県支部連合会",
+   url:"https://mie-shogi.com/result/scdantai.html", source:"三重県支部連合会"},
+  {id:"ai-monka-0531", name:"文部科学大臣杯 第22回 小・中学校将棋団体戦 愛知県大会", area:"aichi", pref:"愛知県",
+   date:"2026-05-31", venue:"名古屋港湾会館", result:true,
+   tags:["こども","団体戦","学校対抗"], organizer:"愛知県支部連合会",
+   url:"https://shogitokai.sakura.ne.jp/22monkahai_syougakkoukekka_2026_0531.pdf", source:"東海本部"},
+  {id:"ai-sone-0524", name:"第6回 杉本賞ソーネ子ども将棋大会", area:"aichi", pref:"愛知県",
+   date:"2026-05-24", venue:"ソーネОZONE（名古屋市）", result:true,
+   tags:["こども"], organizer:"杉本昌隆八段賞",
+   url:"https://shogitokai.sakura.ne.jp/6_SugimotoSho_Sone_Taikai_Kekka_20260524.pdf", source:"東海本部"},
+
+  /* ---------- テーブルマークこども大会 全国 ---------- */
+  {id:"tm-shizuoka", name:"テーブルマークこども大会 静岡大会", area:"tm", pref:"静岡県",
+   date:"2026-07-25", venue:"ツインメッセ静岡（静岡市）",
+   tags:["申込終了"], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/1-3/index.html", source:"JT テーブルマーク"},
+  {id:"tm-fukuoka", name:"テーブルマークこども大会 福岡大会", area:"tm", pref:"福岡県",
+   date:"2026-08-01", venue:"福岡国際センター（福岡市）",
+   tags:["申込終了"], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/1-4/index.html", source:"JT テーブルマーク"},
+  {id:"tm-hokkaido", name:"テーブルマークこども大会 北海道大会", area:"tm", pref:"北海道",
+   date:"2026-08-08", venue:"札幌コンベンションセンター（札幌市）",
+   tags:["申込終了"], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/2-1/index.html", source:"JT テーブルマーク"},
+  {id:"tm-hokushinetsu", name:"テーブルマークこども大会 北陸・信越大会", area:"tm", pref:"石川県",
+   date:"2026-08-22", venue:"石川県産業展示館（金沢市）", deadline:"2026-07-26",
+   tags:[], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/2-2/index.html", source:"JT テーブルマーク"},
+  {id:"tm-chugoku", name:"テーブルマークこども大会 中国大会", area:"tm", pref:"広島県",
+   date:"2026-09-05", venue:"広島サンプラザホール（広島市）", deadline:"2026-08-09",
+   tags:[], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/2-3/index.html", source:"JT テーブルマーク"},
+  {id:"tm-kumamoto", name:"テーブルマークこども大会 熊本大会", area:"tm", pref:"熊本県",
+   date:"2026-09-12", venue:"グランメッセ熊本（上益城郡）", deadline:"2026-08-16",
+   tags:[], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/2-4/index.html", source:"JT テーブルマーク"},
+  {id:"tm-osaka", name:"テーブルマークこども大会 大阪大会", area:"tm", pref:"大阪府",
+   date:"2026-09-26", venue:"インテックス大阪（大阪市）", deadline:"2026-08-30",
+   tags:[], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/3-1/index.html", source:"JT テーブルマーク"},
+  {id:"tm-tokai", name:"テーブルマークこども大会 東海大会", area:"tm", pref:"愛知県",
+   date:"2026-10-31", venue:"Aichi Sky Expo（常滑市）", deadline:"2026-10-04",
+   tags:["地元"], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/3-2/index.html", source:"JT テーブルマーク"},
+  {id:"tm-kanto", name:"テーブルマークこども大会 関東大会", area:"tm", pref:"東京都",
+   date:"2026-11-29", venue:"東京ビッグサイト（江東区）", deadline:"2026-11-01",
+   tags:[], organizer:"日本将棋連盟／JT",
+   url:"https://www.jti.co.jp/culture/shogi/kids/schedule/2026/final/index.html", source:"JT テーブルマーク"},
+];
+
+
+/* ---- 毎年ひらかれる大会（2026年度の日程はまだ発表されていないもの） ----
+   when: 時期の目安 / lastYear: 前回の開催実績 */
+window.SHOGI_ANNUAL = [
+  {id:"an-yokkaichi-ichibangai", name:"四日市一番街ジュニア将棋大会", area:"mie",
+   when:"11月ごろ", venue:"一番街商店街アーケード内（四日市市）",
+   info:"小・中学生・無料・定員80名（先着）", lastYear:"前回 2025年11月3日／申込は10月中旬しめきり",
+   tags:["こども","無料","事前申込"], organizer:"四日市一番街商店街振興組合",
+   url:"https://sho-shogi.blogspot.com/2025/09/blog-post_22.html"},
+  {id:"an-kameyama-jido", name:"亀山児童センター 子ども将棋大会", area:"mie",
+   when:"10月・2月ごろ", venue:"亀山児童センター（亀山市）",
+   info:"小・中学生20名（申込先着）・無料・年2回", lastYear:"前回 2025年10月18日／2026年2月28日",
+   tags:["こども","無料","年2回"], organizer:"亀山市",
+   url:"https://sho-shogi.blogspot.com/2025/09/blog-post_82.html"},
+  {id:"an-matsusaka-udedameshi", name:"夏休み腕だめし将棋大会", area:"mie",
+   when:"8月ごろ（夏休み）", venue:"松阪公民館（松阪市）",
+   info:"小4〜6の部／小3以下・未就学児の部・500円", lastYear:"前回 2025年8月10日",
+   tags:["こども","夏休み","低学年の部あり"], organizer:"松阪将棋普及同好会",
+   url:"https://sho-shogi.blogspot.com/2025/08/8.html"},
+  {id:"an-ise-iwasa", name:"岩佐杯将棋交流大会", area:"mie",
+   when:"11月ごろ", venue:"伊勢市労働福祉会館（伊勢市）",
+   info:"C級は三重県在住の小学生以下（低学年・高学年の部）・700円", lastYear:"前回 2025年11月1日／女流棋士の指導対局あり",
+   tags:["こども向けクラスあり","指導対局"], organizer:"日本将棋連盟 伊勢支部",
+   url:"https://mie-shogi.com/new/iwasahai2025.html"},
+  {id:"an-inabe-geibun", name:"芸術文化協会会長杯争奪 囲碁将棋大会", area:"mie",
+   when:"5月ごろ", venue:"北勢市民会館 さくらホール（いなべ市）",
+   info:"奨励級（小学生以下の初心者）あり・中学生以下1,000円", lastYear:"前回 2026年5月24日",
+   tags:["初心者クラスあり"], organizer:"いなべ市芸術文化協会",
+   url:"https://sho-shogi.blogspot.com/2025/02/13.html"},
+];
+
+const ALABEL={mie:"三重",aichi:"愛知",tm:"全国",other:"東海"};
+const WD=["日","月","火","水","木","金","土"];
+
+const LS="shogi_cal_state_v3";
+let state=Object.assign({favs:[],custom:[]}, JSON.parse(localStorage.getItem(LS)||"{}"));
+function save(){ localStorage.setItem(LS, JSON.stringify(state)); }
+
+const now=new Date();
+const todayKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+function parse(d){ const [y,m,dd]=d.split("-").map(Number); return new Date(y,m-1,dd); }
+function ymOf(d){ const dt=parse(d); return dt.getFullYear()*100+(dt.getMonth()+1); }
+function fmt(d){ const dt=parse(d); return `${dt.getMonth()+1}/${dt.getDate()}（${WD[dt.getDay()]}）`; }
+
+function card(ev){
+  const dt=parse(ev.date), sun=dt.getDay()===0, isFav=state.favs.includes(ev.id);
+  const past=ev.date<todayKey;
+  const meta=[];
+  if(ev.venue) meta.push(`<span>📍 ${ev.venue}</span>`);
+  if(ev.organizer) meta.push(`<span>主催 ${ev.organizer}</span>`);
+  const tags=[`<span class="tag area ${ev.area}">${ALABEL[ev.area]}</span>`];
+  if(ev.custom) tags.push(`<span class="tag mine">自分で追加</span>`);
+  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag">${t}</span>`));
+  return `<div class="ev ${ev.area}${past?' past':''}">
+    <button class="fav-btn ${isFav?'on':''}" data-fav="${ev.id}">${isFav?'★':'☆'}</button>
+    <div class="top">
+      <div class="date-badge ${sun?'sun':''}"><div class="m">${dt.getMonth()+1}月</div><div class="dd">${dt.getDate()}</div><div class="w">${WD[dt.getDay()]}</div></div>
+      <div style="flex:1;min-width:0"><h3>${ev.name}</h3><div class="meta">${meta.join("")}</div></div>
+    </div>
+    <div class="tags">${tags.join("")}</div>
+    ${ev.deadline?`<div class="meta" style="margin-top:8px"><span class="deadline">📮 申込締切 ${fmt(ev.deadline)}</span></div>`:''}
+    <div class="actions">${ev.url?`<a class="link" href="${ev.url}" target="_blank" rel="noopener">${ev.result?'結果をみる →':'詳細をみる →'}</a>`:`<span class="link disabled">詳細ページ準備中</span>`}${ev.custom?`<button class="del" data-del="${ev.id}">けす</button>`:''}</div>
+    ${ev.source?`<div class="src">出典：${ev.source}</div>`:''}
+  </div>`;
+}
+
+
+function annualCard(ev){
+  const isFav=state.favs.includes(ev.id);
+  const meta=[];
+  if(ev.venue) meta.push(`<span>📍 ${ev.venue}</span>`);
+  if(ev.organizer) meta.push(`<span>主催 ${ev.organizer}</span>`);
+  const tags=[`<span class="tag area ${ev.area}">${ALABEL[ev.area]}</span>`,`<span class="tag soon">日程まち</span>`];
+  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag">${t}</span>`));
+  return `<div class="ev annual ${ev.area}">
+    <button class="fav-btn ${isFav?'on':''}" data-fav="${ev.id}">${isFav?'★':'☆'}</button>
+    <div class="top">
+      <div class="when"><div class="lab">時期の目安</div><div class="val">${ev.when}</div></div>
+      <div style="flex:1;min-width:0"><h3>${ev.name}</h3><div class="meta">${meta.join("")}</div></div>
+    </div>
+    <div class="tags">${tags.join("")}</div>
+    ${ev.info?`<div class="meta" style="margin-top:8px"><span>${ev.info}</span></div>`:''}
+    ${ev.lastYear?`<div class="src" style="margin-top:6px">${ev.lastYear}</div>`:''}
+    <div class="actions">${ev.url?`<a class="link" href="${ev.url}" target="_blank" rel="noopener">前回の内容をみる →</a>`:`<span class="link disabled">情報なし</span>`}</div>
+  </div>`;
+}
+
+function render(){
+  const lv=document.getElementById("listView");
+  const evs=SHOGI_EVENTS.concat(state.custom||[]).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!evs.length){ lv.innerHTML=`<div class="empty-note"><span class="big">☖</span>大会がありません</div>`; return; }
+  const upcoming=evs.filter(ev=>ev.date>=todayKey);
+  const past=evs.filter(ev=>ev.date<todayKey).reverse();
+  const groups={};
+  upcoming.forEach(ev=>{ (groups[ymOf(ev.date)] ||= []).push(ev); });
+  let html="";
+  Object.keys(groups).sort().forEach(ym=>{
+    const y=Math.floor(ym/100), m=ym%100;
+    html+=`<div class="section-h">${y}年 ${m}月<small>${groups[ym].length}件</small></div>`+groups[ym].map(card).join("");
+  });
+  if(!upcoming.length){
+    html+=`<div class="empty-note"><span class="big">☖</span>これからの大会はまだありません</div>`;
+  }
+  if(window.SHOGI_ANNUAL && SHOGI_ANNUAL.length){
+    html+=`<div class="annual-h">毎年ひらかれる大会</div>`
+      +`<div class="annual-note">2026年度の日程はまだ発表されていません。時期が近づいたら各リンク先で確認してください。（内容は前回開催時のものです）</div>`
+      +SHOGI_ANNUAL.map(annualCard).join("");
+  }
+  if(past.length){
+    html+=`<div class="annual-h">おわった大会<small style="font-size:11px;color:var(--sumi-soft);font-family:var(--body);letter-spacing:.08em;margin-left:8px">${past.length}件</small></div>`
+      +`<div class="annual-note">新しいものから順に並んでいます。結果が出ていることがあるので、リンク先をのぞいてみてください。</div>`
+      +past.map(card).join("");
+  }
+  lv.innerHTML=html;
+  lv.querySelectorAll("[data-fav]").forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation(); const id=b.dataset.fav, i=state.favs.indexOf(id);
+      if(i<0) state.favs.push(id); else state.favs.splice(i,1); save(); render(); };
+  });
+  lv.querySelectorAll("[data-del]").forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation(); const id=b.dataset.del;
+      const ev=(state.custom||[]).find(x=>x.id===id);
+      if(!confirm(`「${ev?ev.name:"この大会"}」をけしますか？`)) return;
+      state.custom=(state.custom||[]).filter(x=>x.id!==id);
+      state.favs=state.favs.filter(f=>f!==id); save(); render(); };
+  });
+}
+
+
+/* ---- 手動入力モーダル ---- */
+const ovl=document.getElementById("ovl");
+const F={name:"fName",date:"fDate",area:"fArea",venue:"fVenue",org:"fOrg",deadline:"fDeadline",tags:"fTags",url:"fUrl"};
+const el=id=>document.getElementById(id);
+function openAdd(){
+  Object.values(F).forEach(id=>{ const e=el(id); if(e) e.value = (id==="fArea"?"mie":""); });
+  el("formErr").classList.remove("show");
+  ovl.classList.add("show");
+  document.body.style.overflow="hidden";
+  setTimeout(()=>el("fName").focus(),120);
+}
+function closeAdd(){ ovl.classList.remove("show"); document.body.style.overflow=""; }
+function saveAdd(){
+  const name=el("fName").value.trim(), date=el("fDate").value;
+  const err=el("formErr");
+  if(!name || !date){
+    err.textContent = !name ? "大会名を入れてください" : "開催日を入れてください";
+    err.classList.add("show"); return;
+  }
+  const tags=el("fTags").value.split(/[、,]/).map(t=>t.trim()).filter(Boolean);
+  state.custom=state.custom||[];
+  state.custom.push({
+    id:"u-"+Date.now(), custom:true, name:name, date:date,
+    area:el("fArea").value,
+    venue:el("fVenue").value.trim(),
+    organizer:el("fOrg").value.trim(),
+    deadline:el("fDeadline").value || undefined,
+    tags:tags,
+    url:el("fUrl").value.trim(),
+    source:""
+  });
+  save(); closeAdd(); render();
+}
+el("addBtn").onclick=openAdd;
+el("closeBtn").onclick=closeAdd;
+el("cancelBtn").onclick=closeAdd;
+el("saveBtn").onclick=saveAdd;
+ovl.onclick=(e)=>{ if(e.target===ovl) closeAdd(); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && ovl.classList.contains("show")) closeAdd(); });
+
+document.getElementById("todayStr").textContent=`${now.getMonth()+1}/${now.getDate()} 現在`;
+document.getElementById("footer").innerHTML=
+  `<b>データ出典</b>：<a href="https://mie-shogi.com/match" target="_blank" rel="noopener">三重県支部連合会</a>／`
+  +`<a href="https://shogitokai.sakura.ne.jp/profile.html" target="_blank" rel="noopener">東海本部</a>／`
+  +`<a href="https://www.jti.co.jp/culture/shogi/kids/schedule/2026/index.html" target="_blank" rel="noopener">JT テーブルマーク</a>。`
+  +`最新・正確な情報は必ず各サイトの詳細ページでご確認ください。`;
+render();
+
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>

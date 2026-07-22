@@ -1,0 +1,19 @@
+{
+  "name": "こども将棋大会カレンダー",
+  "short_name": "将棋大会",
+  "description": "三重・愛知を中心に、小学生が出場できる将棋大会をまとめた早見表。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf1e0",
+  "theme_color": "#21406b",
+  "categories": ["education", "sports", "utilities"],
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
