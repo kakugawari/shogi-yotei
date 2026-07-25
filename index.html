@@ -51,6 +51,7 @@
   .km.tm{background:var(--tm)} .km.other{background:var(--other)}
 
   .list{padding:6px 12px 40px}
+  #listView > .section-h:first-child{margin-top:8px}
   .section-h{font-family:var(--disp);font-size:15px;letter-spacing:.05em;color:var(--ai-deep);
     margin:20px 4px 8px;padding-bottom:6px;border-bottom:1.5px solid var(--line);
     display:flex;align-items:baseline;gap:8px}
@@ -77,6 +78,7 @@
   .ev .tag.area.mie{background:var(--mie)} .ev .tag.area.aichi{background:var(--aichi)}
   .ev .tag.area.tm{background:var(--tm)} .ev .tag.area.other{background:var(--other)}
   .ev .deadline{color:var(--shu);font-weight:700}
+  .ev .tag.done{background:#e4e0d8;color:#8b8578}
   .ev .actions{margin-top:10px;display:flex;gap:8px}
   .ev .link{flex:1;text-align:center;text-decoration:none;background:transparent;
     color:var(--sumi-soft);font-weight:600;font-size:12.5px;padding:8px;border-radius:8px;
@@ -93,8 +95,9 @@
 
 
   /* 毎年ひらかれる大会（日程未発表）の別枠 */
-  .annual-h{font-family:var(--disp);font-size:15px;letter-spacing:.05em;color:var(--ai-deep);
-    margin:30px 4px 4px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+  .annual-h{font-family:var(--disp);font-size:16px;letter-spacing:.06em;color:var(--ai-deep);
+    margin:34px 4px 4px;padding:0 0 7px 12px;position:relative;border-bottom:1.5px solid var(--line)}
+  .annual-h::before{content:"";position:absolute;left:0;top:2px;bottom:9px;width:4px;border-radius:2px;background:var(--ai)}
   .annual-note{font-size:11.5px;color:var(--sumi-soft);margin:0 4px 12px;line-height:1.6}
   .ev.annual{border-style:dashed;border-left-style:solid;background:#fdfaf3}
   .ev.annual .when{flex:none;text-align:center;background:transparent;border:1px dashed var(--line);
@@ -137,6 +140,35 @@
     padding:8px 10px;cursor:pointer;flex:none}
   .tag.mine{background:#e3ecf5;color:var(--ai)}
 
+  /* 伊勢志摩教室 — 掲示板 */
+  .kyoshitsu{margin:16px 12px 4px;position:relative;border-radius:3px;
+    background:
+      repeating-linear-gradient(90deg, rgba(139,120,90,.05) 0 1px, transparent 1px 7px),
+      linear-gradient(160deg,#fffdf7 0%, #f9f4e8 100%);
+    border:1.5px solid var(--ai);
+    box-shadow:0 0 0 1px rgba(255,255,255,.65) inset, 0 2px 10px rgba(21,42,68,.10), 0 10px 22px -14px rgba(21,42,68,.35);
+    padding:0 0 4px;overflow:hidden}
+
+  .k-head{display:flex;align-items:baseline;gap:9px;
+    padding:13px 15px 10px 16px;border-bottom:1px solid rgba(33,64,107,.22)}
+  .k-head h2{font-family:var(--disp);font-size:16.5px;letter-spacing:.14em;margin:0;
+    font-weight:600;color:var(--ai-deep)}
+  .k-seal{flex:none;align-self:center;width:24px;height:24px;border-radius:4px;
+    background:var(--shu);color:#fff;font-family:var(--disp);font-size:9.5px;font-weight:600;
+    display:grid;place-items:center;line-height:1.05;text-align:center;letter-spacing:.02em;
+    box-shadow:0 1px 3px rgba(208,67,43,.35);opacity:.92}
+
+  .kyoshitsu dl{margin:0;padding:6px 16px 10px 16px}
+  .kyoshitsu .kr{display:flex;align-items:baseline;gap:0;padding:9px 0 8px}
+  .kyoshitsu .kr + .kr{border-top:1px dashed #e2d8c3}
+  .kyoshitsu dt{font-size:13.5px;color:var(--sumi);font-weight:700;letter-spacing:.04em;flex:none;align-self:center}
+  .kyoshitsu .kr{align-items:center}
+  .kyoshitsu .lead{flex:1;min-width:14px;margin:0 10px;height:0;border-bottom:1px dotted #cfc4ac;transform:translateY(4px)}
+  .kyoshitsu dd{margin:0;font-family:var(--disp);font-size:19px;line-height:1;
+    color:var(--ai-deep);letter-spacing:.01em;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .kyoshitsu dd small{font-size:11px;font-family:var(--body);color:var(--sumi-soft);
+    margin-left:2px;letter-spacing:.02em}
+
   footer{padding:8px 18px 30px;color:var(--sumi-soft);font-size:11px;line-height:1.7}
   footer b{color:var(--sumi)} footer a{color:var(--ai)}
 </style>
@@ -156,6 +188,20 @@
     <span class="item"><span class="km aichi"></span>愛知</span>
     <span class="item"><span class="km tm"></span>全国（テーブルマーク）</span>
   </div>
+
+
+  <section class="kyoshitsu" aria-label="伊勢志摩教室 料金">
+    <div class="k-head">
+      <div class="k-seal">料金</div>
+      <h2>伊勢志摩教室</h2>
+    </div>
+    <dl>
+      <div class="kr"><dt>席料</dt><span class="lead"></span><dd>500<small>円</small></dd></div>
+      <div class="kr"><dt>回数券（8＋1回）</dt><span class="lead"></span><dd>4,000<small>円</small></dd></div>
+      <div class="kr"><dt>月例会</dt><span class="lead"></span><dd>600<small>円</small></dd></div>
+      <div class="kr"><dt>リーグ戦</dt><span class="lead"></span><dd>300<small>円</small></dd></div>
+    </dl>
+  </section>
 
   <div class="list" id="listView"></div>
   <footer id="footer"></footer>
@@ -401,7 +447,7 @@ function card(ev){
   if(ev.organizer) meta.push(`<span>主催 ${ev.organizer}</span>`);
   const tags=[`<span class="tag area ${ev.area}">${ALABEL[ev.area]}</span>`];
   if(ev.custom) tags.push(`<span class="tag mine">自分で追加</span>`);
-  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag">${t}</span>`));
+  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag${t==="申込終了"?" done":""}">${t}</span>`));
   return `<div class="ev ${ev.area}${past?' past':''}">
     <button class="fav-btn ${isFav?'on':''}" data-fav="${ev.id}">${isFav?'★':'☆'}</button>
     <div class="top">
@@ -422,7 +468,7 @@ function annualCard(ev){
   if(ev.venue) meta.push(`<span>📍 ${ev.venue}</span>`);
   if(ev.organizer) meta.push(`<span>主催 ${ev.organizer}</span>`);
   const tags=[`<span class="tag area ${ev.area}">${ALABEL[ev.area]}</span>`,`<span class="tag soon">日程まち</span>`];
-  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag">${t}</span>`));
+  (ev.tags||[]).forEach(t=>tags.push(`<span class="tag${t==="申込終了"?" done":""}">${t}</span>`));
   return `<div class="ev annual ${ev.area}">
     <button class="fav-btn ${isFav?'on':''}" data-fav="${ev.id}">${isFav?'★':'☆'}</button>
     <div class="top">
