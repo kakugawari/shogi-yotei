@@ -41,14 +41,20 @@
   .brand .sub{font-size:11px;opacity:.72;margin-left:auto;letter-spacing:.04em}
   .note{font-size:11px;opacity:.7;margin-top:5px;letter-spacing:.03em}
 
-  /* 色分けのはんれい（選択できない・表示だけ） */
-  .legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
-    padding:10px 16px 9px;font-size:11.5px;color:var(--sumi-soft);
-    border-bottom:1px solid var(--line)}
-  .legend span.item{display:inline-flex;align-items:center;gap:5px}
-  .legend .km{width:10px;height:11px;flex:none;clip-path:polygon(50% 0,100% 30%,84% 100%,16% 100%,0 30%)}
+  /* 地域でしぼるタブ（色分けのはんれいをかねています） */
+  .km{width:10px;height:11px;flex:none;clip-path:polygon(50% 0,100% 30%,84% 100%,16% 100%,0 30%)}
   .km.mie{background:var(--mie)} .km.aichi{background:var(--aichi)}
   .km.tm{background:var(--tm)} .km.other{background:var(--other)}
+  .tabs{display:flex;gap:6px;padding:14px 12px 2px;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:none;display:inline-flex;align-items:center;gap:5px;font-family:var(--body);
+    font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--sumi-soft);
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:7px 13px;cursor:pointer;transition:.12s}
+  .tab:active{transform:scale(.96)}
+  .tab.on{background:var(--ai);border-color:var(--ai);color:#fff}
+  .tab.on .km{background:#fff}
+  .tab .n{font-size:10.5px;opacity:.6;font-variant-numeric:tabular-nums}
 
   .list{padding:6px 12px 40px}
   #listView > .section-h:first-child{margin-top:8px}
@@ -100,6 +106,14 @@
     margin:34px 4px 4px;padding:0 0 7px 12px;position:relative;border-bottom:1.5px solid var(--line)}
   .annual-h::before{content:"";position:absolute;left:0;top:2px;bottom:9px;width:4px;border-radius:2px;background:var(--ai)}
   .annual-note{font-size:11.5px;color:var(--sumi-soft);margin:0 4px 12px;line-height:1.6}
+  /* タップで開け閉めする見出し */
+  button.annual-h{display:flex;align-items:baseline;gap:8px;width:calc(100% - 8px);
+    margin-left:4px;margin-right:4px;border:0;border-bottom:1.5px solid var(--line);
+    background:transparent;cursor:pointer;text-align:left;font-weight:600}
+  button.annual-h .cnt{font-size:11px;color:var(--sumi-soft);font-family:var(--body);letter-spacing:.08em}
+  button.annual-h .chev{margin-left:auto;font-size:10px;color:var(--sumi-soft);
+    transition:transform .18s;align-self:center}
+  button.annual-h.open .chev{transform:rotate(180deg)}
   .ev.annual{border-style:dashed;border-left-style:solid;background:#fdfaf3}
   .ev.annual .when{flex:none;text-align:center;background:transparent;border:1px dashed var(--line);
     border-radius:9px;padding:6px 7px;min-width:52px;color:var(--sumi-soft)}
@@ -184,14 +198,6 @@
     </div>
   </header>
 
-  <div class="legend">
-    <span class="item"><span class="km mie"></span>三重</span>
-    <span class="item"><span class="km aichi"></span>愛知</span>
-    <span class="item"><span class="km tm"></span>全国（テーブルマーク）</span>
-    <span class="item"><span class="km other"></span>その他</span>
-  </div>
-
-
   <section class="kyoshitsu" aria-label="伊勢志摩教室 料金">
     <div class="k-head">
       <div class="k-seal">料金</div>
@@ -206,6 +212,7 @@
     </dl>
   </section>
 
+  <div class="tabs" id="tabs" role="tablist" aria-label="地域でしぼる"></div>
   <div class="list" id="listView"></div>
   <footer id="footer"></footer>
 </div>
@@ -441,7 +448,8 @@ const ALABEL={mie:"三重",aichi:"愛知",tm:"全国",other:"その他"};
 const WD=["日","月","火","水","木","金","土"];
 
 const LS="shogi_cal_state_v3";
-let state=Object.assign({favs:[],custom:[]}, JSON.parse(localStorage.getItem(LS)||"{}"));
+let state=Object.assign({favs:[],custom:[],area:"all",openAnnual:false,openPast:false},
+                        JSON.parse(localStorage.getItem(LS)||"{}"));
 function save(){ localStorage.setItem(LS, JSON.stringify(state)); }
 
 const now=new Date();
@@ -496,12 +504,35 @@ function annualCard(ev){
   </div>`;
 }
 
+/* ---- 地域でしぼるタブ ---- */
+function allEvents(){ return SHOGI_EVENTS.concat(state.custom||[]); }
+function inArea(ev){ return state.area==="all" || ev.area===state.area; }
+
+function renderTabs(){
+  const evs=allEvents(), annual=window.SHOGI_ANNUAL||[];
+  /* 1件もない地域はタブに出しません（「その他」は自分で追加したときだけ出ます） */
+  const areas=["mie","aichi","tm","other"].filter(a=>evs.some(e=>e.area===a)||annual.some(e=>e.area===a));
+  const cnt=a=>evs.filter(e=>e.date>=todayKey && (a==="all"||e.area===a)).length;
+  const btn=(a,label,km)=>`<button class="tab${state.area===a?' on':''}" role="tab"
+    aria-selected="${state.area===a}" data-tab="${a}">${km?`<span class="km ${a}"></span>`:''}${label}<span class="n">${cnt(a)}</span></button>`;
+  document.getElementById("tabs").innerHTML =
+    btn("all","すべて",false) + areas.map(a=>btn(a,ALABEL[a],true)).join("");
+}
+
+/* ---- タップで開け閉めするセクションの見出し ---- */
+function foldH(key,label,n){
+  const open=!!state[key];
+  return `<button class="annual-h${open?' open':''}" data-fold="${key}" aria-expanded="${open}">`
+    +`${label}<span class="cnt">${n}件</span><span class="chev">▼</span></button>`;
+}
+
 function render(){
   const lv=document.getElementById("listView");
-  const evs=SHOGI_EVENTS.concat(state.custom||[]).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!evs.length){ lv.innerHTML=`<div class="empty-note"><span class="big">☖</span>大会がありません</div>`; return; }
+  renderTabs();
+  const evs=allEvents().filter(inArea).sort((a,b)=>a.date.localeCompare(b.date));
   const upcoming=evs.filter(ev=>ev.date>=todayKey);
   const past=evs.filter(ev=>ev.date<todayKey).reverse();
+  const annual=(window.SHOGI_ANNUAL||[]).filter(inArea);
   const groups={};
   upcoming.forEach(ev=>{ (groups[ymOf(ev.date)] ||= []).push(ev); });
   let html="";
@@ -510,19 +541,31 @@ function render(){
     html+=`<div class="section-h">${y}年 ${m}月<small>${groups[ym].length}件</small></div>`+groups[ym].map(card).join("");
   });
   if(!upcoming.length){
-    html+=`<div class="empty-note"><span class="big">☖</span>これからの大会はまだありません</div>`;
+    html+=`<div class="empty-note"><span class="big">☖</span>`
+      +(state.area==="all"?`これからの大会はまだありません`
+        :`${ALABEL[state.area]}のこれからの大会はまだありません<br>ほかの地域も見てみてください`)+`</div>`;
   }
-  if(window.SHOGI_ANNUAL && SHOGI_ANNUAL.length){
-    html+=`<div class="annual-h">毎年ひらかれる大会</div>`
-      +`<div class="annual-note">2026年度の日程はまだ発表されていません。時期が近づいたら各リンク先で確認してください。（内容は前回開催時のものです）</div>`
-      +SHOGI_ANNUAL.map(annualCard).join("");
+  if(annual.length){
+    html+=foldH("openAnnual","毎年ひらかれる大会",annual.length);
+    if(state.openAnnual){
+      html+=`<div class="annual-note">2026年度の日程はまだ発表されていません。時期が近づいたら各リンク先で確認してください。（内容は前回開催時のものです）</div>`
+        +annual.map(annualCard).join("");
+    }
   }
   if(past.length){
-    html+=`<div class="annual-h">おわった大会<small style="font-size:11px;color:var(--sumi-soft);font-family:var(--body);letter-spacing:.08em;margin-left:8px">${past.length}件</small></div>`
-      +`<div class="annual-note">新しいものから順に並んでいます。結果が出ていることがあるので、リンク先をのぞいてみてください。</div>`
-      +past.map(card).join("");
+    html+=foldH("openPast","おわった大会",past.length);
+    if(state.openPast){
+      html+=`<div class="annual-note">新しいものから順に並んでいます。結果が出ていることがあるので、リンク先をのぞいてみてください。</div>`
+        +past.map(card).join("");
+    }
   }
   lv.innerHTML=html;
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    b.onclick=()=>{ state.area=b.dataset.tab; save(); render(); };
+  });
+  lv.querySelectorAll("[data-fold]").forEach(b=>{
+    b.onclick=()=>{ const k=b.dataset.fold; state[k]=!state[k]; save(); render(); };
+  });
   lv.querySelectorAll("[data-fav]").forEach(b=>{
     b.onclick=(e)=>{ e.stopPropagation(); const id=b.dataset.fav, i=state.favs.indexOf(id);
       if(i<0) state.favs.push(id); else state.favs.splice(i,1); save(); render(); };
