@@ -1,6 +1,6 @@
 /* こども将棋大会カレンダー Service Worker
    大会データを更新したら CACHE のバージョン番号を上げてください */
-const CACHE = "shogi-taikai-v8";
+const CACHE = "shogi-taikai-v9";
 const ASSETS = [
   "./",
   "./index.html",
