@@ -78,6 +78,7 @@
   .ev .tag.area.mie{background:var(--mie)} .ev .tag.area.aichi{background:var(--aichi)}
   .ev .tag.area.tm{background:var(--tm)} .ev .tag.area.other{background:var(--other)}
   .ev .deadline{color:var(--shu);font-weight:700}
+  .ev .deadline.over{color:var(--sumi-soft);font-weight:600}
   .ev .tag.done{background:#e4e0d8;color:#8b8578}
   .ev .actions{margin-top:10px;display:flex;gap:8px}
   .ev .link{flex:1;text-align:center;text-decoration:none;background:transparent;
@@ -444,12 +445,15 @@ function fmt(d){ const dt=parse(d); return `${dt.getMonth()+1}/${dt.getDate()}�
 function card(ev){
   const dt=parse(ev.date), sun=dt.getDay()===0, isFav=state.favs.includes(ev.id);
   const past=ev.date<todayKey;
+  /* 締切をすぎたら自動でグレーの「申込終了」に。手でタグを付けなおす必要はありません */
+  const over=!!ev.deadline && ev.deadline<todayKey;
   const meta=[];
   if(ev.venue) meta.push(`<span>📍 ${ev.venue}</span>`);
   if(ev.organizer) meta.push(`<span>主催 ${ev.organizer}</span>`);
   const tags=[`<span class="tag area ${ev.area}">${ALABEL[ev.area]}</span>`];
   if(ev.custom) tags.push(`<span class="tag mine">自分で追加</span>`);
   (ev.tags||[]).forEach(t=>tags.push(`<span class="tag${t==="申込終了"?" done":""}">${t}</span>`));
+  if(over && !past && !(ev.tags||[]).includes("申込終了")) tags.push(`<span class="tag done">申込終了</span>`);
   return `<div class="ev ${ev.area}${past?' past':''}">
     <button class="fav-btn ${isFav?'on':''}" data-fav="${ev.id}">${isFav?'★':'☆'}</button>
     <div class="top">
@@ -457,7 +461,7 @@ function card(ev){
       <div style="flex:1;min-width:0"><h3>${ev.name}</h3><div class="meta">${meta.join("")}</div></div>
     </div>
     <div class="tags">${tags.join("")}</div>
-    ${ev.deadline?`<div class="meta" style="margin-top:8px"><span class="deadline">📮 申込締切 ${fmt(ev.deadline)}</span></div>`:''}
+    ${ev.deadline?`<div class="meta" style="margin-top:8px"><span class="deadline${(over||past)?' over':''}">📮 申込締切 ${fmt(ev.deadline)}</span></div>`:''}
     <div class="actions">${ev.url?`<a class="link" href="${ev.url}" target="_blank" rel="noopener">${ev.result?'結果をみる →':'詳細をみる →'}</a>`:`<span class="link disabled">詳細ページ準備中</span>`}${ev.custom?`<button class="del" data-del="${ev.id}">けす</button>`:''}</div>
     ${ev.source?`<div class="src">出典：${ev.source}</div>`:''}
   </div>`;
